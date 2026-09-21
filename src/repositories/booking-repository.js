@@ -1,7 +1,10 @@
-const { StatusCodes } = require('http-status-codes')
+const { StatusCodes } = require('http-status-codes');
+const { Op } = require('sequelize');
 
-const { Booking } = require('../models')
-const CRUDRepository = require('./crud-repository')
+const { Booking } = require('../models');
+const CRUDRepository = require('./crud-repository');
+const { Enums } = require('../utils/common')
+const { BOOKED, CANCELLED } = Enums.BOOKING_STATUS;
 
 class BookingRepository extends CRUDRepository {
     constructor() {
@@ -14,7 +17,7 @@ class BookingRepository extends CRUDRepository {
     }
 
     async get(data, transaction) {
-        const response = await this.model.findByPk(data, { transaction: transaction });
+        const response = await Booking.findByPk(data, { transaction: transaction });
         if (!response) {
             throw new AppError('Not able to found the resource', StatusCodes.NOT_FOUND)
         }
@@ -22,11 +25,37 @@ class BookingRepository extends CRUDRepository {
     }
 
     async update(id, data, transaction) { // data -> { col: val...}
-        const response = await this.model.update(data, {
+        const response = await Booking.update(data, {
             where: {
                 id: id
             }
         }, { transaction: transaction })
+        return response;
+    }
+
+    async cancelOldBookings(timestamps) {
+        const response = await Booking.update({ status: CANCELLED }, {
+            where: {
+                [Op.and]: [
+                    {
+                        createdAt: {
+                            [Op.lt]: timestamps
+                        }
+                    },
+                    {
+                        status: {
+                            [Op.ne]: BOOKED
+                        }
+                    },
+                    {
+                        status: {
+                            [Op.ne]: CANCELLED
+                        }
+                    }
+                ]
+
+            }
+        });
         return response;
     }
 }
