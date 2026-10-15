@@ -42,7 +42,8 @@ async function makePayment(req, res) {
         const response = await BookingService.makePayment({
             bookingId: req.body.bookingId,
             userId: req.body.userId,
-            totalCost: req.body.totalCost
+            totalCost: req.body.totalCost,
+            email: req.body.email
         })
         inMemDb[idempotencyKey] = idempotencyKey;
         SuccessResponse.data = response;
